@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
+	"os"
 	"time"
 
 	"github.com/brotherlogic/goserver"
@@ -62,6 +63,13 @@ func (s *Server) GetState() []*pbg.State {
 	}
 }
 
+func (s *Server) validate(ctx context.Context) error {
+	if _, err := os.Stat("/home/simon/pytilt/pytilt.py"); os.IsNotExist(err) {
+		return fmt.Errorf("Cannot locate pytilt binary")
+	}
+	return nil
+}
+
 func main() {
 	var quiet = flag.Bool("quiet", false, "Show all output")
 	var init = flag.Bool("init", false, "Prep server")
@@ -90,6 +98,8 @@ func main() {
 		fmt.Printf("Initialised: %v\n", err)
 		return
 	}
+
+	server.RegisterRepeatingTaskNonMaster(server.validate, "validate", time.Minute)
 
 	fmt.Printf("%v", server.Serve())
 }
