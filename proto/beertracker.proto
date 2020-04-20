@@ -1,0 +1,15 @@
+syntax = "proto3";
+
+package beertracker;
+
+option go_package = "github.com/brotherlogic/beertracker/proto";
+
+message Readings {
+  repeated Reading readings = 1;
+}
+
+message Reading {
+  int32 gravity = 1;
+  int32 temperature = 2;
+  int64 timestamp = 3;
+}
