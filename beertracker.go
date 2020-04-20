@@ -72,7 +72,7 @@ func (s *Server) validate(ctx context.Context) error {
 }
 
 func (s *Server) pullBinaries(ctx context.Context) error {
-	conn, err := s.NewBaseDial("executor")
+	conn, err := s.DialServer("executor", s.Registry.Identifier)
 	if err != nil {
 		return err
 	}
