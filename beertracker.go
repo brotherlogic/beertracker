@@ -70,6 +70,18 @@ func (s *Server) validate(ctx context.Context) error {
 	return nil
 }
 
+func (s *Server) pullBinaries(ctx context.Context) error {
+	conn, err := s.NewBaseDial("executor")
+	if err != nil {
+		return
+	}
+	defer conn.Close()
+
+	client := pbe.NewExecutorServiceClient(conn)
+	_, err := client.Execute(ctx, &pbe.ExecuteRequest{Command: &pbe.Command{Binary: "git", Parameters: []string{"clone", "https://github.com/brotherlogic/pytilt", "/home/simon/pytilt"}}})
+	return err
+}
+
 func main() {
 	var quiet = flag.Bool("quiet", false, "Show all output")
 	var init = flag.Bool("init", false, "Prep server")
@@ -100,6 +112,7 @@ func main() {
 	}
 
 	server.RegisterRepeatingTaskNonMaster(server.validate, "validate", time.Minute)
+	server.RegisterRepeatingTaskNonMaster(server.pullBinaries, "pull_binaries", time.Minute*10)
 
 	fmt.Printf("%v", server.Serve())
 }
