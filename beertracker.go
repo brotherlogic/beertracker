@@ -15,6 +15,7 @@ import (
 	"google.golang.org/grpc"
 
 	pb "github.com/brotherlogic/beertracker/proto"
+	epb "github.com/brotherlogic/executor/proto"
 	pbg "github.com/brotherlogic/goserver/proto"
 )
 
@@ -73,12 +74,12 @@ func (s *Server) validate(ctx context.Context) error {
 func (s *Server) pullBinaries(ctx context.Context) error {
 	conn, err := s.NewBaseDial("executor")
 	if err != nil {
-		return
+		return err
 	}
 	defer conn.Close()
 
-	client := pbe.NewExecutorServiceClient(conn)
-	_, err := client.Execute(ctx, &pbe.ExecuteRequest{Command: &pbe.Command{Binary: "git", Parameters: []string{"clone", "https://github.com/brotherlogic/pytilt", "/home/simon/pytilt"}}})
+	client := epb.NewExecutorServiceClient(conn)
+	_, err = client.Execute(ctx, &epb.ExecuteRequest{Command: &epb.Command{Binary: "git", Parameters: []string{"clone", "https://github.com/brotherlogic/pytilt", "/home/simon/pytilt"}}})
 	return err
 }
 
