@@ -84,7 +84,7 @@ func (s *Server) installBluez(ctx context.Context) error {
 	defer conn.Close()
 
 	client := epb.NewExecutorServiceClient(conn)
-	_, err = client.Execute(ctx, &epb.ExecuteRequest{Command: &epb.Command{Binary: "sudo", Parameters: []string{"apt", "install", "python-bluez"}}})
+	_, err = client.Execute(ctx, &epb.ExecuteRequest{Command: &epb.Command{Binary: "sudo", Parameters: []string{"apt", "install", "-y", "python-bluez"}}})
 	return err
 }
 
