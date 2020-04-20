@@ -68,7 +68,24 @@ func (s *Server) validate(ctx context.Context) error {
 	if _, err := os.Stat("/home/simon/pytilt/pytilt.py"); os.IsNotExist(err) {
 		return fmt.Errorf("Cannot locate pytilt binary")
 	}
+
+	if _, err := os.Stat("/usr/lib/python2.7/dist-packages/bluetooth/bluez.py"); os.IsNotExist(err) {
+		return s.installBluez(ctx)
+	}
+
 	return nil
+}
+
+func (s *Server) installBluez(ctx context.Context) error {
+	conn, err := s.DialServer("executor", s.Registry.Identifier)
+	if err != nil {
+		return err
+	}
+	defer conn.Close()
+
+	client := epb.NewExecutorServiceClient(conn)
+	_, err = client.Execute(ctx, &epb.ExecuteRequest{Command: &epb.Command{Binary: "sudo", Parameters: []string{"apt", "install", "python-bluez"}}})
+	return err
 }
 
 func (s *Server) pullBinaries(ctx context.Context) error {
