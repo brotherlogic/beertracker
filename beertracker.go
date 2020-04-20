@@ -85,7 +85,7 @@ func main() {
 	server.PrepServer()
 	server.Register = server
 
-	err := server.RegisterServerV2("recordadder", false, true)
+	err := server.RegisterServerV2("beertracker", false, true)
 	if err != nil {
 		return
 	}
