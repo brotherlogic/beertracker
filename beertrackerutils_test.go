@@ -1,10 +1,10 @@
 package main
 
 import (
+	"context"
 	"testing"
 
 	"github.com/brotherlogic/keystore/client"
-	"golang.org/x/net/context"
 
 	pb "github.com/brotherlogic/beertracker/proto"
 )
