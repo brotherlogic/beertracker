@@ -73,7 +73,7 @@ func (s *Server) validate(ctx context.Context) error {
 		return s.installBluez(ctx)
 	}
 
-	if _, err := os.State("/usr/lib/python2.7/dist-packages/requests/packages.py"); os.IsNotExist(err) {
+	if _, err := os.Stat("/usr/lib/python2.7/dist-packages/requests/packages.py"); os.IsNotExist(err) {
 		return s.installRequests(ctx)
 	}
 
@@ -92,7 +92,7 @@ func (s *Server) installBluez(ctx context.Context) error {
 	return err
 }
 
-func (s *Server) installBluez(ctx context.Context) error {
+func (s *Server) installRequests(ctx context.Context) error {
 	conn, err := s.DialServer("executor", s.Registry.Identifier)
 	if err != nil {
 		return err
