@@ -136,6 +136,11 @@ func (s *Server) pullBinaries(ctx context.Context) error {
 
 	client := epb.NewExecutorServiceClient(conn)
 	_, err = client.Execute(ctx, &epb.ExecuteRequest{Command: &epb.Command{Binary: "git", Parameters: []string{"clone", "https://github.com/brotherlogic/pytilt", "/home/simon/pytilt"}}})
+
+	if err != nil {
+		_, err := client.Execute(ctx, &epb.ExecuteRequest{Command: &epb.Command{Binary: "git", Parameters: []string{"--git-dir=/home/simon/pytilt/.git", "pull"}}})
+		return err
+	}
 	return err
 }
 
