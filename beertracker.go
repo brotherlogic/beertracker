@@ -77,6 +77,23 @@ func (s *Server) validate(ctx context.Context) error {
 		return s.installRequests(ctx)
 	}
 
+	return s.checkCap(ctx)
+}
+
+func (s *Server) checkCap(ctx context.Context) error {
+	conn, err := s.DialServer("executor", s.Registry.Identifier)
+	if err != nil {
+		return err
+	}
+	defer conn.Close()
+
+	client := epb.NewExecutorServiceClient(conn)
+	res, err := client.Execute(ctx, &epb.ExecuteRequest{Command: &epb.Command{Binary: "getcap", Parameters: []string{"/usr/bin/python2.7"}}})
+	if err != nil {
+		return err
+	}
+
+	s.Log(fmt.Sprintf("RESULT = %v", res))
 	return nil
 }
 
