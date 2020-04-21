@@ -93,7 +93,13 @@ func (s *Server) checkCap(ctx context.Context) error {
 		return err
 	}
 
-	s.Log(fmt.Sprintf("RESULT = %v", res))
+	if len(res.GetCommandOutput()) == 0 {
+		res, err := client.Execute(ctx, &epb.ExecuteRequest{Command: &epb.Command{Binary: "sudo", Parameters: []string{"/sbin/setcap", "ap_net_raw+eip", "/usr/bin/python2.7"}}})
+		if err != nil {
+			return err
+		}
+
+	}
 	return nil
 }
 
