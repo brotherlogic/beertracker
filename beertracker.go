@@ -88,7 +88,7 @@ func (s *Server) checkCap(ctx context.Context) error {
 	defer conn.Close()
 
 	client := epb.NewExecutorServiceClient(conn)
-	res, err := client.Execute(ctx, &epb.ExecuteRequest{Command: &epb.Command{Binary: "getcap", Parameters: []string{"/usr/bin/python2.7"}}})
+	res, err := client.Execute(ctx, &epb.ExecuteRequest{Command: &epb.Command{Binary: "/sbin/getcap", Parameters: []string{"/usr/bin/python2.7"}}})
 	if err != nil {
 		return err
 	}
