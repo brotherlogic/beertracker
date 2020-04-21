@@ -73,6 +73,10 @@ func (s *Server) validate(ctx context.Context) error {
 		return s.installBluez(ctx)
 	}
 
+	if _, err := os.State("/usr/lib/python2.7/dist-packages/requests/packages.py"); os.IsNotExist(err) {
+		return s.installRequests(ctx)
+	}
+
 	return nil
 }
 
@@ -85,6 +89,18 @@ func (s *Server) installBluez(ctx context.Context) error {
 
 	client := epb.NewExecutorServiceClient(conn)
 	_, err = client.Execute(ctx, &epb.ExecuteRequest{Command: &epb.Command{Binary: "sudo", Parameters: []string{"apt", "install", "-y", "python-bluez"}}})
+	return err
+}
+
+func (s *Server) installBluez(ctx context.Context) error {
+	conn, err := s.DialServer("executor", s.Registry.Identifier)
+	if err != nil {
+		return err
+	}
+	defer conn.Close()
+
+	client := epb.NewExecutorServiceClient(conn)
+	_, err = client.Execute(ctx, &epb.ExecuteRequest{Command: &epb.Command{Binary: "sudo", Parameters: []string{"apt", "install", "-y", "python-requests"}}})
 	return err
 }
 
