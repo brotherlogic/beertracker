@@ -183,7 +183,8 @@ func (s *Server) pullBinaries(ctx context.Context) error {
 		client := epb.NewExecutorServiceClient(conn)
 		_, err = client.Execute(ctx, &epb.ExecuteRequest{Command: &epb.Command{Binary: "git", Parameters: []string{"clone", "https://github.com/brotherlogic/pytilt", "/home/simon/pytilt"}}})
 	} else {
-		_, err = client.Execute(ctx, &epb.ExecuteRequest{Command: &epb.Command{Binary: "git", Parameters: []string{"--git-dir=/home/simon/pytilt/.git", "pull"}}})
+		r, err := client.Execute(ctx, &epb.ExecuteRequest{Command: &epb.Command{Binary: "git", Parameters: []string{"--git-dir=/home/simon/pytilt/.git", "pull"}}})
+		s.Log(fmt.Sprintf("ADJUST %v and %v", r, err))
 	}
 	return err
 }
