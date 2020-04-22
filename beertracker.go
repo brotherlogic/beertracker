@@ -84,10 +84,10 @@ func (s *Server) validate(ctx context.Context) error {
 
 //Reading from the tilt
 type Reading struct {
-	Color     string `json:"color"`
-	Timestamp string `json:"timestamp"`
-	Gravity   int    `json:"gravity"`
-	Temp      float  `json:"temp"`
+	Color     string  `json:"color"`
+	Timestamp string  `json:"timestamp"`
+	Gravity   int     `json:"gravity"`
+	Temp      float32 `json:"temp"`
 }
 
 func (s *Server) retrieve(ctx context.Context) error {
