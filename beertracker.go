@@ -8,7 +8,6 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
-	"strconv"
 	"time"
 
 	"github.com/brotherlogic/goserver"
@@ -107,10 +106,10 @@ func (s *Server) retrieve(ctx context.Context) error {
 		var reading Reading
 		json.Unmarshal([]byte(res.GetCommandOutput()), &reading)
 
-		gint, errg := strconv.Atoi(reading.Gravity)
-		tfl, errt := strconv.ParseFloat(reading.Temp, 32)
-		s.Log(fmt.Sprintf("Read: %v -> %v (%v, %v)", res.GetCommandOutput(), reading, errg, errt))
-		newRead := &pb.Reading{Gravity: int32(gint), Timestamp: time.Now().Unix(), Temperature: float32(tfl)}
+		//gint, errg := strconv.Atoi(reading.Gravity)
+		//tfl, errt := strconv.ParseFloat(reading.Temp, 32)
+		s.Log(fmt.Sprintf("Read: %v -> %v (%v, %v)", res.GetCommandOutput(), reading, 1, 1))
+		newRead := &pb.Reading{Gravity: int32(reading.Gravity), Timestamp: time.Now().Unix(), Temperature: float32(reading.Temp)}
 
 		data, _, err := s.KSclient.Read(ctx, READINGS, &pb.Readings{})
 		if err != nil {
