@@ -154,7 +154,7 @@ func (s *Server) pullBinaries(ctx context.Context) error {
 	defer conn.Close()
 
 	client := epb.NewExecutorServiceClient(conn)
-	if _, err := os.Stat("/home/simon/pylint/pytlint.py"); os.IsNotExist(err) {
+	if _, err := os.Stat("/home/simon/pytilt/pytilt.py"); os.IsNotExist(err) {
 		client := epb.NewExecutorServiceClient(conn)
 		_, err = client.Execute(ctx, &epb.ExecuteRequest{Command: &epb.Command{Binary: "git", Parameters: []string{"clone", "https://github.com/brotherlogic/pytilt", "/home/simon/pytilt"}}})
 	} else {
