@@ -84,10 +84,10 @@ func (s *Server) validate(ctx context.Context) error {
 
 //Reading from the tilt
 type Reading struct {
-	color     string
-	timestamp string
-	gravity   string
-	temp      string
+	Color     string
+	Timestamp string
+	Gravity   string
+	Temp      string
 }
 
 func (s *Server) retrieve(ctx context.Context) error {
@@ -107,8 +107,8 @@ func (s *Server) retrieve(ctx context.Context) error {
 		var reading Reading
 		json.Unmarshal([]byte(res.GetCommandOutput()), &reading)
 
-		gint, errg := strconv.Atoi(reading.gravity)
-		tfl, errt := strconv.ParseFloat(reading.temp, 32)
+		gint, errg := strconv.Atoi(reading.Gravity)
+		tfl, errt := strconv.ParseFloat(reading.Temp, 32)
 		s.Log(fmt.Sprintf("Read: %v -> %v (%v, %v)", res.GetCommandOutput(), reading, errg, errt))
 		newRead := &pb.Reading{Gravity: int32(gint), Timestamp: time.Now().Unix(), Temperature: float32(tfl)}
 
