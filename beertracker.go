@@ -104,11 +104,11 @@ func (s *Server) retrieve(ctx context.Context) error {
 
 	if len(res.GetCommandOutput()) != 0 {
 		var reading Reading
-		json.Unmarshal([]byte(res.GetCommandOutput()), &reading)
+		errj := json.Unmarshal([]byte(res.GetCommandOutput()), &reading)
 
 		//gint, errg := strconv.Atoi(reading.Gravity)
 		//tfl, errt := strconv.ParseFloat(reading.Temp, 32)
-		s.Log(fmt.Sprintf("Read: %v -> %v (%v, %v)", res.GetCommandOutput(), reading, 1, 1))
+		s.Log(fmt.Sprintf("Read: %v -> %v (%v, %v) - %v", res.GetCommandOutput(), reading, 1, 1, errj))
 		newRead := &pb.Reading{Gravity: int32(reading.Gravity), Timestamp: time.Now().Unix(), Temperature: float32(reading.Temp)}
 
 		data, _, err := s.KSclient.Read(ctx, READINGS, &pb.Readings{})
