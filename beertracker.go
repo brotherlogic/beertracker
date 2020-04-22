@@ -80,6 +80,25 @@ func (s *Server) validate(ctx context.Context) error {
 	return s.checkCap(ctx)
 }
 
+func (s *Server) retrieve(ctx context.Context) error {
+	conn, err := s.DialServer("executor", s.Registry.Identifier)
+	if err != nil {
+		return err
+	}
+	defer conn.Close()
+
+	client := epb.NewExecutorServiceClient(conn)
+	res, err := client.Execute(ctx, &epb.ExecuteRequest{Command: &epb.Command{Binary: "python", Parameters: []string{"/home/simon/pytilt/pytilt.py"}}})
+	if err != nil {
+		return err
+	}
+
+	if len(res.GetCommandOutput()) != 0 {
+		s.Log(fmt.Sprintf("Read: %v", res.GetCommandOutput()))
+	}
+	return nil
+}
+
 func (s *Server) checkCap(ctx context.Context) error {
 	conn, err := s.DialServer("executor", s.Registry.Identifier)
 	if err != nil {
@@ -94,7 +113,7 @@ func (s *Server) checkCap(ctx context.Context) error {
 	}
 
 	if len(res.GetCommandOutput()) == 0 {
-		res, err := client.Execute(ctx, &epb.ExecuteRequest{Command: &epb.Command{Binary: "sudo", Parameters: []string{"/sbin/setcap", "ap_net_raw+eip", "/usr/bin/python2.7"}}})
+		_, err = client.Execute(ctx, &epb.ExecuteRequest{Command: &epb.Command{Binary: "sudo", Parameters: []string{"/sbin/setcap", "ap_net_raw+eip", "/usr/bin/python2.7"}}})
 		if err != nil {
 			return err
 		}
@@ -135,11 +154,11 @@ func (s *Server) pullBinaries(ctx context.Context) error {
 	defer conn.Close()
 
 	client := epb.NewExecutorServiceClient(conn)
-	_, err = client.Execute(ctx, &epb.ExecuteRequest{Command: &epb.Command{Binary: "git", Parameters: []string{"clone", "https://github.com/brotherlogic/pytilt", "/home/simon/pytilt"}}})
-
-	if err != nil {
-		_, err := client.Execute(ctx, &epb.ExecuteRequest{Command: &epb.Command{Binary: "git", Parameters: []string{"--git-dir=/home/simon/pytilt/.git", "pull"}}})
-		return err
+	if _, err := os.Stat("/home/simon/pylint/pytlint.py"); os.IsNotExist(err) {
+		client := epb.NewExecutorServiceClient(conn)
+		_, err = client.Execute(ctx, &epb.ExecuteRequest{Command: &epb.Command{Binary: "git", Parameters: []string{"clone", "https://github.com/brotherlogic/pytilt", "/home/simon/pytilt"}}})
+	} else {
+		_, err = client.Execute(ctx, &epb.ExecuteRequest{Command: &epb.Command{Binary: "git", Parameters: []string{"--git-dir=/home/simon/pytilt/.git", "pull"}}})
 	}
 	return err
 }
@@ -175,6 +194,7 @@ func main() {
 
 	server.RegisterRepeatingTaskNonMaster(server.validate, "validate", time.Minute)
 	server.RegisterRepeatingTaskNonMaster(server.pullBinaries, "pull_binaries", time.Minute*10)
+	server.RegisterRepeatingTaskNonMaster(server.pullBinaries, "retrieve", time.Minute*10)
 
 	fmt.Printf("%v", server.Serve())
 }
