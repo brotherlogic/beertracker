@@ -113,7 +113,7 @@ func (s *Server) checkCap(ctx context.Context) error {
 	}
 
 	if len(res.GetCommandOutput()) == 0 {
-		_, err = client.Execute(ctx, &epb.ExecuteRequest{Command: &epb.Command{Binary: "sudo", Parameters: []string{"/sbin/setcap", "ap_net_raw+eip", "/usr/bin/python2.7"}}})
+		_, err = client.Execute(ctx, &epb.ExecuteRequest{Command: &epb.Command{Binary: "sudo", Parameters: []string{"/sbin/setcap", "cap_net_raw+eip", "/usr/bin/python2.7"}}})
 		if err != nil {
 			return err
 		}
