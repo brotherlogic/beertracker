@@ -8,6 +8,7 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/brotherlogic/goserver"
@@ -104,7 +105,7 @@ func (s *Server) retrieve(ctx context.Context) error {
 
 	if len(res.GetCommandOutput()) != 0 {
 		var reading Reading
-		errj := json.Unmarshal([]byte(res.GetCommandOutput()), &reading)
+		errj := json.Unmarshal([]byte(strings.Replace(res.GetCommandOutput(), "'", "\"", -1)), &reading)
 
 		//gint, errg := strconv.Atoi(reading.Gravity)
 		//tfl, errt := strconv.ParseFloat(reading.Temp, 32)
