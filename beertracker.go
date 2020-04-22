@@ -194,7 +194,7 @@ func main() {
 
 	server.RegisterRepeatingTaskNonMaster(server.validate, "validate", time.Minute)
 	server.RegisterRepeatingTaskNonMaster(server.pullBinaries, "pull_binaries", time.Minute*10)
-	server.RegisterRepeatingTaskNonMaster(server.pullBinaries, "retrieve", time.Minute*10)
+	server.RegisterRepeatingTaskNonMaster(server.retrieve, "retrieve", time.Minute)
 
 	fmt.Printf("%v", server.Serve())
 }
