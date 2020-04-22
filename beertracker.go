@@ -2,11 +2,13 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"flag"
 	"fmt"
 	"io/ioutil"
 	"log"
 	"os"
+	"strconv"
 	"time"
 
 	"github.com/brotherlogic/goserver"
@@ -80,6 +82,14 @@ func (s *Server) validate(ctx context.Context) error {
 	return s.checkCap(ctx)
 }
 
+//Reading from the tilt
+type Reading struct {
+	color     string
+	timestamp string
+	gravity   string
+	temp      string
+}
+
 func (s *Server) retrieve(ctx context.Context) error {
 	conn, err := s.DialServer("executor", s.Registry.Identifier)
 	if err != nil {
@@ -94,7 +104,22 @@ func (s *Server) retrieve(ctx context.Context) error {
 	}
 
 	if len(res.GetCommandOutput()) != 0 {
-		s.Log(fmt.Sprintf("Read: %v", res.GetCommandOutput()))
+		var reading Reading
+		json.Unmarshal([]byte(res.GetCommandOutput()), &reading)
+
+		gint, errg := strconv.Atoi(reading.gravity)
+		tfl, errt := strconv.ParseFloat(reading.temp, 32)
+		s.Log(fmt.Sprintf("Read: %v -> %v (%v, %v)", res.GetCommandOutput(), reading, errg, errt))
+		newRead := &pb.Reading{Gravity: int32(gint), Timestamp: time.Now().Unix(), Temperature: float32(tfl)}
+
+		data, _, err := s.KSclient.Read(ctx, READINGS, &pb.Readings{})
+		if err != nil {
+			return err
+		}
+		readings := data.(*pb.Readings)
+		readings.Readings = append(readings.Readings, newRead)
+
+		return s.KSclient.Save(ctx, READINGS, readings)
 	}
 	return nil
 }

@@ -10,6 +10,6 @@ message Readings {
 
 message Reading {
   int32 gravity = 1;
-  int32 temperature = 2;
+  float temperature = 2;
   int64 timestamp = 3;
 }
