@@ -98,7 +98,7 @@ func (s *Server) retrieve(ctx context.Context) error {
 	defer conn.Close()
 
 	client := epb.NewExecutorServiceClient(conn)
-	res, err := client.Execute(ctx, &epb.ExecuteRequest{Command: &epb.Command{Binary: "python", Parameters: []string{"/home/simon/pytilt/pytilt.py"}}})
+	res, err := client.QueueExecute(ctx, &epb.ExecuteRequest{Command: &epb.Command{DeleteOnComplete: true, Binary: "python", Parameters: []string{"/home/simon/pytilt/pytilt.py"}}})
 	if err != nil {
 		return err
 	}
