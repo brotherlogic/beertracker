@@ -14,11 +14,24 @@ import (
 	"github.com/brotherlogic/goserver"
 	"github.com/brotherlogic/goserver/utils"
 	"github.com/brotherlogic/keystore/client"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
 	"google.golang.org/grpc"
 
 	pb "github.com/brotherlogic/beertracker/proto"
 	epb "github.com/brotherlogic/executor/proto"
 	pbg "github.com/brotherlogic/goserver/proto"
+)
+
+var (
+	greading = promauto.NewGauge(prometheus.GaugeOpts{
+		Name: "beertracker_reading_gravity",
+		Help: "Current reading",
+	})
+	treading = promauto.NewGauge(prometheus.GaugeOpts{
+		Name: "beertracker_reading_temperature",
+		Help: "Current reading",
+	})
 )
 
 const (
@@ -111,6 +124,8 @@ func (s *Server) retrieve(ctx context.Context) error {
 		//tfl, errt := strconv.ParseFloat(reading.Temp, 32)
 		s.Log(fmt.Sprintf("Read: %v -> %v (%v, %v) - %v", res.GetCommandOutput(), reading, 1, 1, errj))
 		newRead := &pb.Reading{Gravity: int32(reading.Gravity), Timestamp: time.Now().Unix(), Temperature: float32(reading.Temp)}
+		greading.Set(float64(reading.Gravity))
+		treading.Set(float64(reading.Temp))
 
 		data, _, err := s.KSclient.Read(ctx, READINGS, &pb.Readings{})
 		if err != nil {
