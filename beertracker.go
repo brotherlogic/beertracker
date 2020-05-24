@@ -32,6 +32,14 @@ var (
 		Name: "beertracker_reading_temperature",
 		Help: "Current reading",
 	})
+	agreading = promauto.NewGauge(prometheus.GaugeOpts{
+		Name: "beertracker_auth_gravity",
+		Help: "Current reading",
+	})
+	atreading = promauto.NewGauge(prometheus.GaugeOpts{
+		Name: "beertracker_auth_temperature",
+		Help: "Current reading",
+	})
 )
 
 const (
@@ -139,6 +147,17 @@ func (s *Server) retrieve(ctx context.Context) error {
 	return nil
 }
 
+func (s *Server) auth(ctx context.Context) error {
+	data, _, err := s.KSclient.Read(ctx, READINGS, &pb.Readings{})
+	if err != nil {
+		return err
+	}
+	readings := data.(*pb.Readings)
+	agreading.Set(float64(readings.GetReadings()[len(readings.GetReadings())-1].Gravity))
+	atreading.Set(float64(readings.GetReadings()[len(readings.GetReadings())-1].Temperature))
+	return nil
+}
+
 func (s *Server) checkCap(ctx context.Context) error {
 	conn, err := s.DialServer("executor", s.Registry.Identifier)
 	if err != nil {
@@ -219,7 +238,7 @@ func main() {
 	server.PrepServer()
 	server.Register = server
 
-	err := server.RegisterServerV2("beertracker", false, true)
+	err := server.RegisterServerV2("beertracker", false, false)
 	if err != nil {
 		return
 	}
@@ -236,6 +255,7 @@ func main() {
 	server.RegisterRepeatingTaskNonMaster(server.validate, "validate", time.Minute)
 	server.RegisterRepeatingTaskNonMaster(server.pullBinaries, "pull_binaries", time.Minute*10)
 	server.RegisterRepeatingTaskNonMaster(server.retrieve, "retrieve", time.Minute)
+	server.RegisterRepeatingTask(server.auth, "auth", time.Minute)
 
 	fmt.Printf("%v", server.Serve())
 }
