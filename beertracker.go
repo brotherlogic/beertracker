@@ -215,9 +215,9 @@ func (s *Server) pullBinaries(ctx context.Context) error {
 	client := epb.NewExecutorServiceClient(conn)
 	if _, err := os.Stat("/home/simon/pytilt/pytilt.py"); os.IsNotExist(err) {
 		client := epb.NewExecutorServiceClient(conn)
-		_, err = client.Execute(ctx, &epb.ExecuteRequest{Command: &epb.Command{Binary: "git", Parameters: []string{"clone", "https://github.com/brotherlogic/pytilt", "/home/simon/pytilt"}}})
+		_, err = client.QueueExecute(ctx, &epb.ExecuteRequest{ReadyForDeletion: true, Command: &epb.Command{Binary: "git", Parameters: []string{"clone", "https://github.com/brotherlogic/pytilt", "/home/simon/pytilt"}}})
 	} else {
-		client.Execute(ctx, &epb.ExecuteRequest{Command: &epb.Command{Binary: "git", Parameters: []string{"--git-dir=/home/simon/pytilt/.git", "pull"}}})
+		client.Execute(ctx, &epb.ExecuteRequest{ReadyForDeletion: true, Command: &epb.Command{Binary: "git", Parameters: []string{"--git-dir=/home/simon/pytilt/.git", "pull"}}})
 	}
 	return err
 }
@@ -252,7 +252,7 @@ func main() {
 	}
 
 	server.RegisterRepeatingTaskNonMaster(server.validate, "validate", time.Minute)
-	server.RegisterRepeatingTaskNonMaster(server.pullBinaries, "pull_binaries", time.Minute*10)
+	server.RegisterRepeatingTaskNonMaster(server.pullBinaries, "pull_binaries", time.Hour)
 	server.RegisterRepeatingTaskNonMaster(server.retrieve, "retrieve", time.Minute)
 	server.RegisterRepeatingTask(server.auth, "auth", time.Minute)
 
