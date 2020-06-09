@@ -147,15 +147,15 @@ func (s *Server) retrieve(ctx context.Context) error {
 	return nil
 }
 
-func (s *Server) auth(ctx context.Context) error {
+func (s *Server) auth(ctx context.Context) (time.Time, error) {
 	data, _, err := s.KSclient.Read(ctx, READINGS, &pb.Readings{})
 	if err != nil {
-		return err
+		return time.Now().Add(time.Minute), err
 	}
 	readings := data.(*pb.Readings)
 	agreading.Set(float64(readings.GetReadings()[len(readings.GetReadings())-1].Gravity))
 	atreading.Set(float64(readings.GetReadings()[len(readings.GetReadings())-1].Temperature))
-	return nil
+	return time.Now().Add(time.Minute), nil
 }
 
 func (s *Server) checkCap(ctx context.Context) error {
@@ -237,7 +237,7 @@ func main() {
 	server.PrepServer()
 	server.Register = server
 
-	err := server.RegisterServerV2("beertracker", false, false)
+	err := server.RegisterServerV2("beertracker", false, true)
 	if err != nil {
 		return
 	}
@@ -254,7 +254,7 @@ func main() {
 	server.RegisterRepeatingTaskNonMaster(server.validate, "validate", time.Minute)
 	server.RegisterRepeatingTaskNonMaster(server.pullBinaries, "pull_binaries", time.Hour)
 	server.RegisterRepeatingTaskNonMaster(server.retrieve, "retrieve", time.Minute)
-	server.RegisterRepeatingTask(server.auth, "auth", time.Minute)
+	server.RegisterLockingTask(server.auth, "auth")
 
 	fmt.Printf("%v", server.Serve())
 }
