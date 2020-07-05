@@ -13,7 +13,6 @@ import (
 
 	"github.com/brotherlogic/goserver"
 	"github.com/brotherlogic/goserver/utils"
-	"github.com/brotherlogic/keystore/client"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"google.golang.org/grpc"
@@ -87,20 +86,20 @@ func (s *Server) GetState() []*pbg.State {
 	}
 }
 
-func (s *Server) validate(ctx context.Context) error {
+func (s *Server) validate() {
 	if _, err := os.Stat("/home/simon/pytilt/pytilt.py"); os.IsNotExist(err) {
-		return fmt.Errorf("Cannot locate pytilt binary")
+		s.Log(fmt.Sprintf("Cannot locate pytilt"))
 	}
 
 	if _, err := os.Stat("/usr/lib/python2.7/dist-packages/bluetooth/bluez.py"); os.IsNotExist(err) {
-		return s.installBluez(ctx)
+		s.installBluez()
 	}
 
 	if _, err := os.Stat("/usr/lib/python2.7/dist-packages/requests/packages.py"); os.IsNotExist(err) {
-		return s.installRequests(ctx)
+		s.installRequests()
 	}
 
-	return s.checkCap(ctx)
+	s.checkCap()
 }
 
 //Reading from the tilt
@@ -111,17 +110,20 @@ type Reading struct {
 	Temp      float32 `json:"temp"`
 }
 
-func (s *Server) retrieve(ctx context.Context) error {
-	conn, err := s.DialServer("executor", s.Registry.Identifier)
+func (s *Server) retrieve() {
+	ctx, cancel := utils.ManualContext("bt-ret", "bt-ret", time.Minute, true)
+	defer cancel()
+	conn, err := s.FDialSpecificServer(ctx, "executor", s.Registry.Identifier)
 	if err != nil {
-		return err
+		s.Log(fmt.Sprintf("Fatal dial: %v", err))
+		return
 	}
 	defer conn.Close()
 
 	client := epb.NewExecutorServiceClient(conn)
 	res, err := client.QueueExecute(ctx, &epb.ExecuteRequest{Command: &epb.Command{DeleteOnComplete: true, Binary: "python", Parameters: []string{"/home/simon/pytilt/pytilt.py"}}})
 	if err != nil {
-		return err
+		s.Log(fmt.Sprintf("Error on execute: %v", err))
 	}
 
 	if len(res.GetCommandOutput()) != 0 {
@@ -137,14 +139,14 @@ func (s *Server) retrieve(ctx context.Context) error {
 
 		data, _, err := s.KSclient.Read(ctx, READINGS, &pb.Readings{})
 		if err != nil {
-			return err
+			s.Log(fmt.Sprintf("Error on read: %v", err))
+			return
 		}
 		readings := data.(*pb.Readings)
 		readings.Readings = append(readings.Readings, newRead)
 
-		return s.KSclient.Save(ctx, READINGS, readings)
+		s.KSclient.Save(ctx, READINGS, readings)
 	}
-	return nil
 }
 
 func (s *Server) auth(ctx context.Context) (time.Time, error) {
@@ -158,57 +160,63 @@ func (s *Server) auth(ctx context.Context) (time.Time, error) {
 	return time.Now().Add(time.Minute), nil
 }
 
-func (s *Server) checkCap(ctx context.Context) error {
-	conn, err := s.DialServer("executor", s.Registry.Identifier)
+func (s *Server) checkCap() {
+	ctx, cancel := utils.ManualContext("bt-cap", "bt-cap", time.Minute, true)
+	defer cancel()
+	conn, err := s.FDialSpecificServer(ctx, "executor", s.Registry.Identifier)
 	if err != nil {
-		return err
+		log.Fatalf("Bad dial of ex: %v", err)
 	}
 	defer conn.Close()
 
 	client := epb.NewExecutorServiceClient(conn)
 	res, err := client.Execute(ctx, &epb.ExecuteRequest{Command: &epb.Command{Binary: "/sbin/getcap", Parameters: []string{"/usr/bin/python2.7"}}})
 	if err != nil {
-		return err
+		log.Fatalf("No get cap: %v", err)
 	}
 
 	if len(res.GetCommandOutput()) == 0 {
 		_, err = client.Execute(ctx, &epb.ExecuteRequest{Command: &epb.Command{Binary: "sudo", Parameters: []string{"/sbin/setcap", "cap_net_raw+eip", "/usr/bin/python2.7"}}})
 		if err != nil {
-			return err
+			log.Fatalf("Error in sudo cat: %v", err)
 		}
 
 	}
-	return nil
 }
 
-func (s *Server) installBluez(ctx context.Context) error {
-	conn, err := s.DialServer("executor", s.Registry.Identifier)
+func (s *Server) installBluez() {
+	ctx, cancel := utils.ManualContext("bt-bluez", "bt-bluez", time.Minute, true)
+	defer cancel()
+	conn, err := s.FDialSpecificServer(ctx, "executor", s.Registry.Identifier)
 	if err != nil {
-		return err
+		log.Fatalf("Cannot dial executor: %v", err)
 	}
 	defer conn.Close()
 
 	client := epb.NewExecutorServiceClient(conn)
-	_, err = client.Execute(ctx, &epb.ExecuteRequest{Command: &epb.Command{Binary: "sudo", Parameters: []string{"apt", "install", "-y", "python-bluez"}}})
-	return err
+	client.Execute(ctx, &epb.ExecuteRequest{Command: &epb.Command{Binary: "sudo", Parameters: []string{"apt", "install", "-y", "python-bluez"}}})
 }
 
-func (s *Server) installRequests(ctx context.Context) error {
-	conn, err := s.DialServer("executor", s.Registry.Identifier)
+func (s *Server) installRequests() {
+	ctx, cancel := utils.ManualContext("bt-req", "bt-req", time.Minute, true)
+	defer cancel()
+	conn, err := s.FDialSpecificServer(ctx, "executor", s.Registry.Identifier)
 	if err != nil {
-		return err
+		log.Fatalf("Cannot dial executor")
 	}
 	defer conn.Close()
 
 	client := epb.NewExecutorServiceClient(conn)
-	_, err = client.Execute(ctx, &epb.ExecuteRequest{Command: &epb.Command{Binary: "sudo", Parameters: []string{"apt", "install", "-y", "python-requests"}}})
-	return err
+	client.Execute(ctx, &epb.ExecuteRequest{Command: &epb.Command{Binary: "sudo", Parameters: []string{"apt", "install", "-y", "python-requests"}}})
 }
 
-func (s *Server) pullBinaries(ctx context.Context) error {
-	conn, err := s.DialServer("executor", s.Registry.Identifier)
+func (s *Server) pullBinaries() {
+	ctx, cancel := utils.ManualContext("bt-req", "bt-req", time.Minute, true)
+	defer cancel()
+
+	conn, err := s.FDialSpecificServer(ctx, "executor", s.Registry.Identifier)
 	if err != nil {
-		return err
+		log.Fatalf("Cannot dial server: %v", err)
 	}
 	defer conn.Close()
 
@@ -219,7 +227,6 @@ func (s *Server) pullBinaries(ctx context.Context) error {
 	} else {
 		client.Execute(ctx, &epb.ExecuteRequest{ReadyForDeletion: true, Command: &epb.Command{Binary: "git", Parameters: []string{"--git-dir=/home/simon/pytilt/.git", "pull"}}})
 	}
-	return err
 }
 
 func main() {
@@ -233,7 +240,6 @@ func main() {
 		log.SetOutput(ioutil.Discard)
 	}
 	server := Init()
-	server.GoServer.KSclient = *keystoreclient.GetClient(server.DialMaster)
 	server.PrepServer()
 	server.Register = server
 
@@ -251,10 +257,15 @@ func main() {
 		return
 	}
 
-	server.RegisterRepeatingTaskNonMaster(server.validate, "validate", time.Minute)
-	server.RegisterRepeatingTaskNonMaster(server.pullBinaries, "pull_binaries", time.Hour)
-	server.RegisterRepeatingTaskNonMaster(server.retrieve, "retrieve", time.Minute)
-	server.RegisterLockingTask(server.auth, "auth")
+	server.pullBinaries()
+	server.validate()
+
+	go func() {
+		for true {
+			time.Sleep(time.Minute)
+			server.retrieve()
+		}
+	}()
 
 	fmt.Printf("%v", server.Serve())
 }
