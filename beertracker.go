@@ -86,13 +86,16 @@ func (s *Server) GetState() []*pbg.State {
 	}
 }
 
-func (s *Server) validate() {
+func (s *Server) validate() error {
 	if _, err := os.Stat("/home/simon/pytilt/pytilt.py"); os.IsNotExist(err) {
 		s.Log(fmt.Sprintf("Cannot locate pytilt"))
 	}
 
 	if _, err := os.Stat("/usr/lib/python2.7/dist-packages/bluetooth/bluez.py"); os.IsNotExist(err) {
-		s.installBluez()
+		err := s.installBluez()
+		if err != nil {
+			return err
+		}
 	}
 
 	if _, err := os.Stat("/usr/lib/python2.7/dist-packages/requests/packages.py"); os.IsNotExist(err) {
@@ -100,6 +103,8 @@ func (s *Server) validate() {
 	}
 
 	s.checkCap()
+
+	return nil
 }
 
 //Reading from the tilt
@@ -184,17 +189,18 @@ func (s *Server) checkCap() {
 	}
 }
 
-func (s *Server) installBluez() {
+func (s *Server) installBluez() error {
 	ctx, cancel := utils.ManualContext("bt-bluez", "bt-bluez", time.Minute, true)
 	defer cancel()
 	conn, err := s.FDialSpecificServer(ctx, "executor", s.Registry.Identifier)
 	if err != nil {
-		log.Fatalf("Cannot dial executor: %v", err)
+		return err
 	}
 	defer conn.Close()
 
 	client := epb.NewExecutorServiceClient(conn)
 	client.Execute(ctx, &epb.ExecuteRequest{Command: &epb.Command{Binary: "sudo", Parameters: []string{"apt", "install", "-y", "python-bluez"}}})
+	return nil
 }
 
 func (s *Server) installRequests() {
@@ -258,7 +264,11 @@ func main() {
 	}
 
 	server.pullBinaries()
-	server.validate()
+	err = server.validate()
+	if err != nil {
+		// Silent quit here
+		return
+	}
 
 	go func() {
 		for true {
