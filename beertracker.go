@@ -216,13 +216,13 @@ func (s *Server) installRequests() {
 	client.Execute(ctx, &epb.ExecuteRequest{Command: &epb.Command{Binary: "sudo", Parameters: []string{"apt", "install", "-y", "python-requests"}}})
 }
 
-func (s *Server) pullBinaries() {
+func (s *Server) pullBinaries() error {
 	ctx, cancel := utils.ManualContext("bt-req", "bt-req", time.Minute, true)
 	defer cancel()
 
 	conn, err := s.FDialSpecificServer(ctx, "executor", s.Registry.Identifier)
 	if err != nil {
-		log.Fatalf("Cannot dial server: %v", err)
+		return err
 	}
 	defer conn.Close()
 
@@ -233,6 +233,7 @@ func (s *Server) pullBinaries() {
 	} else {
 		client.Execute(ctx, &epb.ExecuteRequest{ReadyForDeletion: true, Command: &epb.Command{Binary: "git", Parameters: []string{"--git-dir=/home/simon/pytilt/.git", "pull"}}})
 	}
+	return err
 }
 
 func main() {
@@ -263,7 +264,12 @@ func main() {
 		return
 	}
 
-	server.pullBinaries()
+	err = server.pullBinaries()
+	if err != nil {
+		// Silent quit here
+		return
+	}
+
 	err = server.validate()
 	if err != nil {
 		// Silent quit here
