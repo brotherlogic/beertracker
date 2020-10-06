@@ -16,6 +16,8 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 
 	pb "github.com/brotherlogic/beertracker/proto"
 	epb "github.com/brotherlogic/executor/proto"
@@ -102,7 +104,10 @@ func (s *Server) validate() error {
 		s.installRequests()
 	}
 
-	s.checkCap()
+	err := s.checkCap()
+	if err != nil {
+		return err
+	}
 
 	return nil
 }
@@ -165,7 +170,7 @@ func (s *Server) auth(ctx context.Context) (time.Time, error) {
 	return time.Now().Add(time.Minute), nil
 }
 
-func (s *Server) checkCap() {
+func (s *Server) checkCap() error {
 	ctx, cancel := utils.ManualContext("bt-cap", "bt-cap", time.Minute, true)
 	defer cancel()
 	conn, err := s.FDialSpecificServer(ctx, "executor", s.Registry.Identifier)
@@ -177,6 +182,9 @@ func (s *Server) checkCap() {
 	client := epb.NewExecutorServiceClient(conn)
 	res, err := client.Execute(ctx, &epb.ExecuteRequest{Command: &epb.Command{Binary: "/sbin/getcap", Parameters: []string{"/usr/bin/python2.7"}}})
 	if err != nil {
+		if status.Convert(err).Code() == codes.Unavailable {
+			return err
+		}
 		log.Fatalf("No get cap: %v", err)
 	}
 
@@ -185,8 +193,9 @@ func (s *Server) checkCap() {
 		if err != nil {
 			log.Fatalf("Error in sudo cat: %v", err)
 		}
-
 	}
+
+	return nil
 }
 
 func (s *Server) installBluez() error {
