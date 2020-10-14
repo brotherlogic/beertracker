@@ -6,6 +6,7 @@ option go_package = "github.com/brotherlogic/beertracker/proto";
 
 message Readings {
   repeated Reading readings = 1;
+  int64 last_read = 2;
 }
 
 message Reading {

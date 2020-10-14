@@ -175,7 +175,7 @@ func (s *Server) checkCap() error {
 	defer cancel()
 	conn, err := s.FDialSpecificServer(ctx, "executor", s.Registry.Identifier)
 	if err != nil {
-		log.Fatalf("Bad dial of ex: %v", err)
+		return err
 	}
 	defer conn.Close()
 
