@@ -121,7 +121,7 @@ type Reading struct {
 }
 
 func (s *Server) retrieve() {
-	ctx, cancel := utils.ManualContext("bt-ret", "bt-ret", time.Minute, true)
+	ctx, cancel := utils.ManualContext("bt-ret", time.Minute)
 	defer cancel()
 	conn, err := s.FDialSpecificServer(ctx, "executor", s.Registry.Identifier)
 	if err != nil {
@@ -171,7 +171,7 @@ func (s *Server) auth(ctx context.Context) (time.Time, error) {
 }
 
 func (s *Server) checkCap() error {
-	ctx, cancel := utils.ManualContext("bt-cap", "bt-cap", time.Minute, true)
+	ctx, cancel := utils.ManualContext("bt-cap", time.Minute)
 	defer cancel()
 	conn, err := s.FDialSpecificServer(ctx, "executor", s.Registry.Identifier)
 	if err != nil {
@@ -199,7 +199,7 @@ func (s *Server) checkCap() error {
 }
 
 func (s *Server) installBluez() error {
-	ctx, cancel := utils.ManualContext("bt-bluez", "bt-bluez", time.Minute, true)
+	ctx, cancel := utils.ManualContext("bt-bluez", time.Minute)
 	defer cancel()
 	conn, err := s.FDialSpecificServer(ctx, "executor", s.Registry.Identifier)
 	if err != nil {
@@ -213,7 +213,7 @@ func (s *Server) installBluez() error {
 }
 
 func (s *Server) installRequests() {
-	ctx, cancel := utils.ManualContext("bt-req", "bt-req", time.Minute, true)
+	ctx, cancel := utils.ManualContext("bt-req", time.Minute)
 	defer cancel()
 	conn, err := s.FDialSpecificServer(ctx, "executor", s.Registry.Identifier)
 	if err != nil {
@@ -226,7 +226,7 @@ func (s *Server) installRequests() {
 }
 
 func (s *Server) pullBinaries() error {
-	ctx, cancel := utils.ManualContext("bt-req", "bt-req", time.Minute, true)
+	ctx, cancel := utils.ManualContext("bt-req", time.Minute)
 	defer cancel()
 
 	conn, err := s.FDialSpecificServer(ctx, "executor", s.Registry.Identifier)
